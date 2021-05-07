@@ -12,6 +12,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
+	"github.com/andersondelgado/prueba_go_graphql/pkg/graphql/global"
 	"github.com/andersondelgado/prueba_go_graphql/pkg/modules/auth/dto"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -51,6 +52,7 @@ type ComplexityRoot struct {
 	Query struct {
 		GetAuthUser func(childComplexity int) int
 		GetUserByID func(childComplexity int, id int) int
+		GetUsers    func(childComplexity int, filter global.PaginationSimpleParams) int
 	}
 
 	User struct {
@@ -70,6 +72,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	GetAuthUser(ctx context.Context) (*User, error)
 	GetUserByID(ctx context.Context, id int) (*User, error)
+	GetUsers(ctx context.Context, filter global.PaginationSimpleParams) ([]*User, error)
 }
 
 type executableSchema struct {
@@ -129,6 +132,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetUserByID(childComplexity, args["id"].(int)), true
+
+	case "Query.getUsers":
+		if e.complexity.Query.GetUsers == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getUsers_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetUsers(childComplexity, args["filter"].(global.PaginationSimpleParams)), true
 
 	case "User.description":
 		if e.complexity.User.Description == nil {
@@ -236,6 +251,14 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
+	{Name: "pkg/graphql/global/global_schema.graphql", Input: `input PaginationSimpleParams {
+    filter: String!
+    offset: Int!
+    limit: Int!
+    orderBy: String!
+}
+
+scalar Timestamp`, BuiltIn: false},
 	{Name: "pkg/modules/auth/schema/auth_schema.graphql", Input: `type User {
     id:Int!
     username:String!
@@ -262,6 +285,7 @@ input InputUser{
 extend type Query {
     getAuthUser:User!
     getUserByID(id:Int!):User!
+    getUsers(filter:PaginationSimpleParams!):[User!]!
 }
 
 extend type Mutation {
@@ -332,6 +356,21 @@ func (ec *executionContext) field_Query_getUserByID_args(ctx context.Context, ra
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getUsers_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 global.PaginationSimpleParams
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalNPaginationSimpleParams2githubᚗcomᚋandersondelgadoᚋprueba_go_graphqlᚋpkgᚋgraphqlᚋglobalᚐPaginationSimpleParams(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
 	return args, nil
 }
 
@@ -532,6 +571,48 @@ func (ec *executionContext) _Query_getUserByID(ctx context.Context, field graphq
 	res := resTmp.(*User)
 	fc.Result = res
 	return ec.marshalNUser2ᚖgithubᚗcomᚋandersondelgadoᚋprueba_go_graphqlᚋpkgᚋgraphqlᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getUsers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getUsers_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetUsers(rctx, args["filter"].(global.PaginationSimpleParams))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*User)
+	fc.Result = res
+	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋandersondelgadoᚋprueba_go_graphqlᚋpkgᚋgraphqlᚐUserᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1990,6 +2071,50 @@ func (ec *executionContext) unmarshalInputInputUser(ctx context.Context, obj int
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPaginationSimpleParams(ctx context.Context, obj interface{}) (global.PaginationSimpleParams, error) {
+	var it global.PaginationSimpleParams
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "filter":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+			it.Filter, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "offset":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+			it.Offset, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "limit":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+			it.Limit, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "orderBy":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+			it.OrderBy, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -2072,6 +2197,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getUserByID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "getUsers":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getUsers(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -2429,6 +2568,11 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) unmarshalNPaginationSimpleParams2githubᚗcomᚋandersondelgadoᚋprueba_go_graphqlᚋpkgᚋgraphqlᚋglobalᚐPaginationSimpleParams(ctx context.Context, v interface{}) (global.PaginationSimpleParams, error) {
+	res, err := ec.unmarshalInputPaginationSimpleParams(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2446,6 +2590,43 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 
 func (ec *executionContext) marshalNUser2githubᚗcomᚋandersondelgadoᚋprueba_go_graphqlᚋpkgᚋgraphqlᚐUser(ctx context.Context, sel ast.SelectionSet, v User) graphql.Marshaler {
 	return ec._User(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋandersondelgadoᚋprueba_go_graphqlᚋpkgᚋgraphqlᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*User) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUser2ᚖgithubᚗcomᚋandersondelgadoᚋprueba_go_graphqlᚋpkgᚋgraphqlᚐUser(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋandersondelgadoᚋprueba_go_graphqlᚋpkgᚋgraphqlᚐUser(ctx context.Context, sel ast.SelectionSet, v *User) graphql.Marshaler {

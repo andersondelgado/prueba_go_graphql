@@ -9,7 +9,7 @@ const (
 	RequestAuthorizationDefault Constant = "Authorization"
 	GinContextKeyDefault        Constant = "GinContextKey"
 	GinContextDBDefault         Constant = "GinContextDB"
-	GinContextKeyAuthDefault    Constant = "GinContextKeyAuth"
+	GinContextKeyAuthDefault    Constant = "KeyAuth"
 	DefaultPort                 Constant = "8082"
 )
 

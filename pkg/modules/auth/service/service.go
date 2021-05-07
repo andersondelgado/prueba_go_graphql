@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/andersondelgado/prueba_go_graphql/pkg/graphql/global"
 	"github.com/andersondelgado/prueba_go_graphql/pkg/modules/auth/dto"
 	"github.com/andersondelgado/prueba_go_graphql/pkg/modules/auth/model"
 	"github.com/andersondelgado/prueba_go_graphql/pkg/modules/auth/repository"
@@ -13,6 +14,11 @@ import (
 
 type UserService struct {
 	repo repository.IUserRepository
+}
+
+func (u UserService) GetUsers(condition string, input global.PaginationSimpleParams) ([]*model.User, error) {
+	//panic("implement me")
+	return u.repo.Paginate(condition, input)
 }
 
 func (u UserService) GetUser(where interface{}) (*model.User, error) {
@@ -94,6 +100,7 @@ type IUserService interface {
 	Login(input dto.InputCredential) (string, error)
 	Register(input dto.InputUser) (string, error)
 	GetUser(where interface{}) (*model.User, error)
+	GetUsers(condition string, input global.PaginationSimpleParams) ([]*model.User, error)
 }
 
 func newUserService() IUserService {

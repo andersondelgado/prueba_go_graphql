@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"github.com/andersondelgado/prueba_go_graphql/pkg/enum"
 	graphql1 "github.com/andersondelgado/prueba_go_graphql/pkg/graphql"
+	"github.com/andersondelgado/prueba_go_graphql/pkg/graphql/global"
 	"github.com/andersondelgado/prueba_go_graphql/pkg/modules/auth/dto"
 	"github.com/andersondelgado/prueba_go_graphql/pkg/modules/auth/model"
 )
@@ -43,6 +44,15 @@ func (r *queryResolver) GetUserByID(ctx context.Context, id int) (*graphql1.User
 	json.Unmarshal(str, &response)
 
 	return response, err
+}
+
+func (r *queryResolver) GetUsers(ctx context.Context, filter global.PaginationSimpleParams) ([]*graphql1.User, error) {
+	filter.Filter = "%" + filter.Filter + "%"
+	entity, error := r.AuthService.UserService.GetUsers("username LIKE ?", filter)
+	var response []*graphql1.User
+	str, _ := json.Marshal(entity)
+	json.Unmarshal(str, &response)
+	return response, error
 }
 
 // Mutation returns graphql1.MutationResolver implementation.

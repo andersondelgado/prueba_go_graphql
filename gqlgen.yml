@@ -1,5 +1,5 @@
 schema: [
-  "pkg/graphql/global_model/global_schema.graphql",
+  "pkg/graphql/global/*.graphql",
   "pkg/modules/auth/schema/*.graphql"
 ]
 
@@ -13,6 +13,8 @@ resolver:
   dir: pkg/graphql/resolver
 
 models:
+  PaginationSimpleParams:
+    model: github.com/andersondelgado/prueba_go_graphql/pkg/graphql/global.PaginationSimpleParams
   InputCredential:
     model: github.com/andersondelgado/prueba_go_graphql/pkg/modules/auth/dto.InputCredential
   InputUser:

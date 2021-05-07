@@ -24,6 +24,7 @@ input InputUser{
 extend type Query {
     getAuthUser:User!
     getUserByID(id:Int!):User!
+    getUsers(filter:PaginationSimpleParams!):[User!]!
 }
 
 extend type Mutation {
