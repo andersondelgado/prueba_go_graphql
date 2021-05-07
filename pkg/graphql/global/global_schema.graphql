@@ -1,0 +1,8 @@
+input PaginationSimpleParams {
+    filter: String!
+    offset: Int!
+    limit: Int!
+    orderBy: String!
+}
+
+scalar Timestamp

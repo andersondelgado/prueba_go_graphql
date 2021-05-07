@@ -1,7 +1,15 @@
 package guard
 
 import (
+	"context"
 	"fmt"
+	"github.com/andersondelgado/prueba_go_graphql/pkg/enum"
+	"github.com/andersondelgado/prueba_go_graphql/pkg/modules/auth/model"
+	"github.com/andersondelgado/prueba_go_graphql/pkg/modules/auth/repository"
+	"github.com/andersondelgado/prueba_go_graphql/pkg/util"
+	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,5 +38,61 @@ func CORS() gin.HandlerFunc {
 		} else {
 			c.Next()
 		}
+	}
+}
+
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		if values, _ := c.Request.Header[string(enum.RequestAuthorizationDefault)]; len(values) <= 0 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Empty token authorization"})
+			c.Next()
+			return
+		}
+
+		strToken0 := c.Request.Header.Get(string(enum.RequestAuthorizationDefault))
+
+		//print("strtoken: ",strToken0)
+		if !strings.HasPrefix(strToken0, "") {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user"})
+			c.Next()
+			return
+		}
+
+		strSplit := strings.Split(strToken0, " ")
+		if len(strSplit) == 0 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user"})
+			c.Next()
+			return
+		}
+		strToken := strSplit[1]
+		//print("\n",strToken)
+		prefixToken := strings.HasPrefix(strToken, "")
+
+		if !prefixToken {
+			panic("Empty token")
+		}
+
+		ID, err := util.DecodeToken(strToken)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.Next()
+			return
+		}
+
+		rep := repository.NewUserRepository()
+		pk, _ := strconv.Atoi(ID)
+		entity, er := rep.GetByParam(map[string]interface{}{"id": pk})
+
+		if er != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user"})
+			c.Next()
+			return
+		}
+		user := model.User{ID: entity.ID, Username: entity.Username}
+
+		ctx := context.WithValue(c.Request.Context(), string(enum.GinContextKeyAuthDefault), user)
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
 	}
 }

@@ -1,0 +1,19 @@
+schema: [
+  "pkg/graphql/global_model/global_schema.graphql",
+  "pkg/modules/auth/schema/*.graphql"
+]
+
+exec:
+  filename: pkg/graphql/server_generated.go
+model:
+  filename: pkg/graphql/models_generated.go
+
+resolver:
+  layout: follow-schema
+  dir: pkg/graphql/resolver
+
+models:
+  InputCredential:
+    model: github.com/andersondelgado/prueba_go_graphql/pkg/modules/auth/dto.InputCredential
+  InputUser:
+    model: github.com/andersondelgado/prueba_go_graphql/pkg/modules/auth/dto.InputUser

@@ -1,18 +1,39 @@
 package main
 
 import (
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/andersondelgado/prueba_go_graphql/pkg/config"
+	"github.com/andersondelgado/prueba_go_graphql/pkg/datasources/mysql"
+	"github.com/andersondelgado/prueba_go_graphql/pkg/enum"
+	"github.com/andersondelgado/prueba_go_graphql/pkg/graphql"
+	"github.com/andersondelgado/prueba_go_graphql/pkg/graphql/resolver"
+	"github.com/andersondelgado/prueba_go_graphql/pkg/guard"
 	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
-	"github.com/andersondelgado/prueba_go_graphql/pkg/config"
-	"github.com/andersondelgado/prueba_go_graphql/pkg/guard"
-	"github.com/andersondelgado/prueba_go_graphql/pkg/enum"
-	"github.com/andersondelgado/prueba_go_graphql/pkg/datasources/mysql"
 	"net/http"
 	"os"
 )
 
-func main()  {
+func graphqlHandler() gin.HandlerFunc {
+	Resolver := resolver.NewResolver()
+	graphqlConfig := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: Resolver}))
+
+	return func(c *gin.Context) {
+		graphqlConfig.ServeHTTP(c.Writer, c.Request)
+	}
+}
+
+func playgroundHandler() gin.HandlerFunc {
+	h := playground.Handler("GraphQL", string(enum.GraphqlURL))
+
+	return func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
+	}
+}
+
+func main() {
 	config.InitEnvironment()
 	mysql.InitDefaultDB()
 	router := gin.New()
@@ -25,6 +46,10 @@ func main()  {
 	router.Static(string(enum.PathFile), string(enum.DirFile))
 
 	router.Use(guard.CORS())
+
+	router.POST(string(enum.GraphqlURL), graphqlHandler())
+	router.POST(string(enum.GraphqlAuthURL), guard.AuthMiddleware(), graphqlHandler())
+	router.GET(string(enum.Root), playgroundHandler())
 
 	api := router.Group(string(enum.Api))
 	{
